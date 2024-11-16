@@ -1,3 +1,6 @@
+import pytest
+
+
 class TestBooksCollector:
 
     def test_add_new_book_add_two_books(self, collector):
@@ -9,15 +12,14 @@ class TestBooksCollector:
         # словарь books_rating, который нам возвращает метод get_books_rating, имеет длину 2
         assert len(collector.books_genre) == 2
 
-    #проверка условия что не добавляется книга больше 40 символов (41)
-    def test_add_new_book_add_book_with_long_name_false(self, collector):
-        collector.add_new_book('12345678901234567890123456789012345678901')
-        assert len(collector.books_genre) == 0
-
-    # проверка условия что не добавляется книга c 0 символов
-    def test_add_new_book_add_book_with_zero_name_false(self, collector):
-        collector.add_new_book('')
-        assert len(collector.books_genre) == 0
+    @pytest.mark.parametrize("name,expected_length", [
+        ('Книга', 1),
+        ('', 0),
+        ("12345678901234567890123456789012345678901", 0),
+    ])
+    def test_add_new_book_different_entered_data(self, name, expected_length, collector):
+        collector.add_new_book(name)
+        assert len(collector.books_genre) == expected_length
 
     # проверка условия что не добавляется дубль книги с уже существующим названием
     def test_add_new_book_add_book_with_same_name_false(self, collector):
@@ -37,29 +39,15 @@ class TestBooksCollector:
         collector.add_new_book(name)
         assert collector.books_genre[name] == ''
 
-    #позитивный тест добавления жанра книге
-    def test_set_book_genre_existing_genre_succesfully_added(self, collector):
-        name = 'Планета обезьян'
-        genre = 'Фантастика'
-        collector.add_new_book(name)
+    @pytest.mark.parametrize("name,genre,expected_genre", [
+        ('Планета обезьян', 'Фантастика', 'Фантастика'), #позитивный тест добавления жанра книге
+        ('Планета обезьян', "Научпоп", ''), # негативный тест жанр не в списке
+        ("Неизвестная книга", "Фантастика", None),  #негативный тест книга не в списке
+    ])
+    def test_set_book_genre(self, name, genre, expected_genre, collector):
+        collector.add_new_book('Планета обезьян')
         collector.set_book_genre(name, genre)
-        assert collector.books_genre[name] == genre
-
-    #негативный тест книга не в списке
-    def test_set_book_genre_no_name_book_empty_str(self, collector):
-        name = 'Планета обезьян'
-        genre = 'Фантастика'
-        collector.add_new_book(name)
-        collector.set_book_genre('Гарри Поттер', genre)
-        assert collector.books_genre[name] == ''
-
-    # негативный тест жанр не в списке
-    def test_set_book_genre_no_name_genre_empty_str(self, collector):
-        name = 'Планета обезьян'
-        genre = 'Сатира'
-        collector.add_new_book(name)
-        collector.set_book_genre(name, genre)
-        assert collector.books_genre[name] == ''
+        assert collector.get_book_genre(name) == expected_genre
 
     # получаем жанр книги по её имени, книга с жанром существует
     def test_get_book_genre_book_with_genre_existed_true(self, collector):
